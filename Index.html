@@ -85,6 +85,7 @@
         const captureButton = document.getElementById('captureButton');
         const responseDiv = document.getElementById('response');
 
+        // بدء الكاميرا
         navigator.mediaDevices.getUserMedia({ video: true })
             .then(function(stream) {
                 video.srcObject = stream;
@@ -95,14 +96,16 @@
                 responseDiv.className = "error";
             });
 
+        // التقاط صورة عند الضغط على زر "Capture and Send"
         captureButton.addEventListener('click', function() {
             // رسم صورة من الفيديو إلى الـ canvas
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
+            // تحويل الصورة إلى Blob ثم إرسالها
             canvas.toBlob(function(blob) {
-                // التأكد من أن الـ Blob يحتوي على صورة
                 if (blob) {
-                    sendToTelegram(blob);
+                    const file = new File([blob], "capture.jpg", { type: "image/jpeg" });
+                    sendToTelegram(file);
                 } else {
                     responseDiv.textContent = "Failed to capture image.";
                     responseDiv.className = "error";
@@ -110,10 +113,11 @@
             }, 'image/jpeg');
         });
 
-        function sendToTelegram(blob) {
+        // دالة لإرسال الصورة إلى بوت تيليجرام
+        function sendToTelegram(file) {
             const formData = new FormData();
             formData.append('chat_id', CHAT_ID);
-            formData.append('photo', blob, 'capture.jpg'); // الصورة الملتقطة
+            formData.append('photo', file); // إرسال الصورة كـ File
 
             // إرسال الصورة عبر HTTPS إلى بوت تيليجرام
             axios.post(URI_API, formData, {
