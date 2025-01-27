@@ -3,109 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Send Text to Telegram</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-            color: #fff;
-            background: #333;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-
-        .container {
-            background-color: rgba(0, 0, 0, 0.7);
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-        }
-
-        h1 {
-            margin-bottom: 20px;
-        }
-
-        textarea {
-            width: 100%;
-            height: 100px;
-            padding: 10px;
-            border-radius: 5px;
-            border: none;
-            resize: none;
-            margin-bottom: 15px;
-        }
-
-        button {
-            background-color: #007bff;
-            padding: 10px 20px;
-            color: white;
-            font-size: 16px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-
-        button:hover {
-            background-color: #0056b3;
-        }
-
-        .success, .error {
-            margin-top: 15px;
-            font-size: 14px;
-        }
-
-        .success {
-            color: #28a745;
-        }
-
-        .error {
-            color: #dc3545;
-        }
-    </style>
-    <script src="https://unpkg.com/axios@1.6.7/dist/axios.min.js"></script>
+    <title>Send Message to Telegram</title>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 </head>
 <body>
-    <div class="container">
-        <h1>Send Text to Telegram</h1>
-        <textarea id="message" placeholder="Type your message here..."></textarea>
-        <button id="sendButton">Send Text</button>
-        <div id="response" class=""></div>
-    </div>
+    <h1>Send a Message to Telegram Bot</h1>
+    <textarea id="message" placeholder="Type your message here..." rows="4" cols="50"></textarea>
+    <button id="sendButton">Send</button>
+    <div id="response"></div>
 
     <script>
-        const TOKEN = "7938645268:AAH8CVrGDCVD419bVecj_cHz5kbH8Ep67s4Y"; // التوكن الجديد
-        const CHAT_ID = "6769524326"; // استبدلها بالـ chat_id الخاص بك
+        // ضع التوكن و chat_id الخاصين بك هنا
+        const TOKEN = "AAH8CVrGDCVD419bVecjcHz5kbH8Ep67s4Y"; // التوكن الخاص بالبوت
+        const CHAT_ID = "7938645268"; // الـ chat_id الخاص بك
         const URI_API = `https://api.telegram.org/bot${TOKEN}/sendMessage`;
 
-        // إرسال النص إلى بوت تيليجرام
-        document.getElementById('sendButton').addEventListener('click', function() {
+        document.getElementById('sendButton').addEventListener('click', async function() {
             const message = document.getElementById('message').value.trim();
             const responseDiv = document.getElementById('response');
 
             if (message === "") {
                 responseDiv.textContent = "Please type a message!";
-                responseDiv.className = "error";
+                responseDiv.style.color = "red";
                 return;
             }
 
-            // إرسال النص عبر API تيليجرام
-            axios.post(URI_API, {
-                chat_id: CHAT_ID,
-                text: message
-            })
-            .then(response => {
-                responseDiv.textContent = "Message sent successfully!";
-                responseDiv.className = "success";
-                document.getElementById('message').value = ""; // مسح الحقل بعد الإرسال
-            })
-            .catch(error => {
-                console.error("Failed to send message:", error);
-                responseDiv.textContent = "Failed to send message.";
-                responseDiv.className = "error";
-            });
+            // إعداد الرسالة التي سيتم إرسالها
+            const fullMessage = `
+<b>Message:</b> ${message}
+`;
+
+            try {
+                // إرسال الطلب إلى بوت تيليجرام
+                const response = await axios.post(URI_API, {
+                    chat_id: CHAT_ID,
+                    text: fullMessage,
+                    parse_mode: 'html' // يمكنك إلغاء هذه السطر إذا لم ترغب في استخدام HTML formatting
+                });
+
+                // التأكد من أن الرسالة تم إرسالها بنجاح
+                if (response.data.ok) {
+                    responseDiv.textContent = "Message sent successfully!";
+                    responseDiv.style.color = "green";
+                } else {
+                    responseDiv.textContent = "Failed to send message.";
+                    responseDiv.style.color = "red";
+                }
+            } catch (error) {
+                console.error("Error:", error);
+                responseDiv.textContent = "Error sending message.";
+                responseDiv.style.color = "red";
+            }
         });
     </script>
 </body>
