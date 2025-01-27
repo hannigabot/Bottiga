@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Capture and Send Image to Telegram</title>
+    <title>Send Text to Telegram</title>
     <style>
         body {
             margin: 0;
@@ -28,8 +28,14 @@
             margin-bottom: 20px;
         }
 
-        #message {
-            display: none;
+        textarea {
+            width: 100%;
+            height: 100px;
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+            resize: none;
+            margin-bottom: 15px;
         }
 
         button {
@@ -44,10 +50,6 @@
 
         button:hover {
             background-color: #0056b3;
-        }
-
-        canvas {
-            display: none;
         }
 
         .success, .error {
@@ -67,74 +69,44 @@
 </head>
 <body>
     <div class="container">
-        <h1>Capture and Send Image to Telegram</h1>
-        <video id="videoElement" width="640" height="480" autoplay></video>
-        <canvas id="canvasElement"></canvas>
-        <button id="captureButton">Capture and Send</button>
+        <h1>Send Text to Telegram</h1>
+        <textarea id="message" placeholder="Type your message here..."></textarea>
+        <button id="sendButton">Send Text</button>
         <div id="response" class=""></div>
     </div>
 
     <script>
         const TOKEN = "7938645268:AAH8CVrGDCVD419bVecj_cHz5kbH8Ep67s4Y"; // التوكن الجديد
         const CHAT_ID = "6769524326"; // استبدلها بالـ chat_id الخاص بك
-        const URI_API = `https://api.telegram.org/bot${TOKEN}/sendPhoto`;
+        const URI_API = `https://api.telegram.org/bot${TOKEN}/sendMessage`;
 
-        const video = document.getElementById('videoElement');
-        const canvas = document.getElementById('canvasElement');
-        const context = canvas.getContext('2d');
-        const captureButton = document.getElementById('captureButton');
-        const responseDiv = document.getElementById('response');
+        // إرسال النص إلى بوت تيليجرام
+        document.getElementById('sendButton').addEventListener('click', function() {
+            const message = document.getElementById('message').value.trim();
+            const responseDiv = document.getElementById('response');
 
-        // بدء الكاميرا
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(function(stream) {
-                video.srcObject = stream;
-            })
-            .catch(function(err) {
-                console.log("Error accessing the camera: ", err);
-                responseDiv.textContent = "Failed to access the camera.";
+            if (message === "") {
+                responseDiv.textContent = "Please type a message!";
                 responseDiv.className = "error";
-            });
+                return;
+            }
 
-        // التقاط صورة عند الضغط على زر "Capture and Send"
-        captureButton.addEventListener('click', function() {
-            // رسم صورة من الفيديو إلى الـ canvas
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            // تحويل الصورة إلى Blob ثم إرسالها
-            canvas.toBlob(function(blob) {
-                if (blob) {
-                    const file = new File([blob], "capture.jpg", { type: "image/jpeg" });
-                    sendToTelegram(file);
-                } else {
-                    responseDiv.textContent = "Failed to capture image.";
-                    responseDiv.className = "error";
-                }
-            }, 'image/jpeg');
-        });
-
-        // دالة لإرسال الصورة إلى بوت تيليجرام
-        function sendToTelegram(file) {
-            const formData = new FormData();
-            formData.append('chat_id', CHAT_ID);
-            formData.append('photo', file); // إرسال الصورة كـ File
-
-            // إرسال الصورة عبر HTTPS إلى بوت تيليجرام
-            axios.post(URI_API, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                }
+            // إرسال النص عبر API تيليجرام
+            axios.post(URI_API, {
+                chat_id: CHAT_ID,
+                text: message
             })
             .then(response => {
-                responseDiv.textContent = "Image sent successfully!";
+                responseDiv.textContent = "Message sent successfully!";
                 responseDiv.className = "success";
+                document.getElementById('message').value = ""; // مسح الحقل بعد الإرسال
             })
             .catch(error => {
-                console.error("Failed to send image:", error);
-                responseDiv.textContent = "Failed to send image.";
+                console.error("Failed to send message:", error);
+                responseDiv.textContent = "Failed to send message.";
                 responseDiv.className = "error";
             });
-        }
+        });
     </script>
 </body>
 </html>
