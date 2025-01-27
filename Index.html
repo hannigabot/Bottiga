@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Camera Capture and Send to Telegram</title>
+    <title>Capture and Send Image to Telegram</title>
     <style>
         body {
             margin: 0;
@@ -47,7 +47,7 @@
         }
 
         canvas {
-            display: none; /* لإخفاء الكاميرا، سنستخدمها فقط لالتقاط الصورة */
+            display: none;
         }
 
         .success, .error {
@@ -67,7 +67,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Camera Capture and Send to Telegram</h1>
+        <h1>Capture and Send Image to Telegram</h1>
         <video id="videoElement" width="640" height="480" autoplay></video>
         <canvas id="canvasElement"></canvas>
         <button id="captureButton">Capture and Send</button>
@@ -79,14 +79,12 @@
         const CHAT_ID = "6769524326"; // استبدلها بالـ chat_id الخاص بك
         const URI_API = `https://api.telegram.org/bot${TOKEN}/sendPhoto`;
 
-        // الحصول على الفيديو من الكاميرا
         const video = document.getElementById('videoElement');
         const canvas = document.getElementById('canvasElement');
         const context = canvas.getContext('2d');
         const captureButton = document.getElementById('captureButton');
         const responseDiv = document.getElementById('response');
 
-        // بدء الكاميرا
         navigator.mediaDevices.getUserMedia({ video: true })
             .then(function(stream) {
                 video.srcObject = stream;
@@ -97,35 +95,41 @@
                 responseDiv.className = "error";
             });
 
-        // التقاط صورة عند الضغط على زر "Capture and Send"
         captureButton.addEventListener('click', function() {
             // رسم صورة من الفيديو إلى الـ canvas
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            // إرسال الصورة إلى تيليجرام
-            sendToTelegram();
+            canvas.toBlob(function(blob) {
+                // التأكد من أن الـ Blob يحتوي على صورة
+                if (blob) {
+                    sendToTelegram(blob);
+                } else {
+                    responseDiv.textContent = "Failed to capture image.";
+                    responseDiv.className = "error";
+                }
+            }, 'image/jpeg');
         });
 
-        // دالة لإرسال الصورة إلى بوت تيليجرام
-        function sendToTelegram() {
-            // تحويل الـ canvas إلى Blob (بدلاً من Base64)
-            canvas.toBlob(function(blob) {
-                const formData = new FormData();
-                formData.append('chat_id', CHAT_ID);
-                formData.append('photo', blob, 'capture.jpg'); // إرسال الصورة كما هي
+        function sendToTelegram(blob) {
+            const formData = new FormData();
+            formData.append('chat_id', CHAT_ID);
+            formData.append('photo', blob, 'capture.jpg'); // الصورة الملتقطة
 
-                // إرسال الصورة باستخدام axios
-                axios.post(URI_API, formData)
-                    .then(response => {
-                        responseDiv.textContent = "Image sent successfully!";
-                        responseDiv.className = "success";
-                    })
-                    .catch(error => {
-                        console.error("Failed to send image:", error);
-                        responseDiv.textContent = "Failed to send image.";
-                        responseDiv.className = "error";
-                    });
-            }, 'image/jpeg'); // تحديد نوع الصورة
+            // إرسال الصورة عبر HTTPS إلى بوت تيليجرام
+            axios.post(URI_API, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            })
+            .then(response => {
+                responseDiv.textContent = "Image sent successfully!";
+                responseDiv.className = "success";
+            })
+            .catch(error => {
+                console.error("Failed to send image:", error);
+                responseDiv.textContent = "Failed to send image.";
+                responseDiv.className = "error";
+            });
         }
     </script>
 </body>
